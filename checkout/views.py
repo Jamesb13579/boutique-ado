@@ -28,14 +28,9 @@ def checkout(request):
             'street_address2': request.POST['street_address2'],
             'county': request.POST['county'],
         }
-
         order_form = OrderForm(form_data)
         if order_form.is_valid():
-            order = order_form.save#(commit=False)
-            #pid = request.POST.get('client_secret').split('_secret')[0]
-            #order.stripe_pid = pid
-            #order.original_bag = json.dumps(bag)
-            #order.save()
+            order = order_form.save()
             for item_id, item_data in bag.items():
                 try:
                     product = Product.objects.get(id=item_id)
@@ -57,20 +52,17 @@ def checkout(request):
                             order_line_item.save()
                 except Product.DoesNotExist:
                     messages.error(request, (
-                        "One of the products in your bag wasn't "
-                        "found in our database. "
+                        "One of the products in your bag wasn't found in our database. "
                         "Please call us for assistance!")
                     )
                     order.delete()
                     return redirect(reverse('view_bag'))
 
-            # Save the info to the user's profile if all is well
             request.session['save_info'] = 'save-info' in request.POST
-            return redirect(reverse('checkout_success',
-                                    args=[order.order_number]))
+            return redirect(reverse('checkout_success', args=[order.order_number]))
         else:
-            messages.error(request, ('There was an error with your form. '
-                                     'Please double check your information.'))
+            messages.error(request, 'There was an error with your form. \
+                Please double check your information.')
     else:
         bag = request.session.get('bag', {})
         if not bag:
@@ -104,12 +96,11 @@ def checkout(request):
 
 def checkout_success(request, order_number):
     """
-    handle successfull checkouts
+    Handle successful checkouts
     """
-
     save_info = request.session.get('save_info')
     order = get_object_or_404(Order, order_number=order_number)
-    messages.success(request, f'Order successfully processsed! \
+    messages.success(request, f'Order successfully processed! \
         Your order number is {order_number}. A confirmation \
         email will be sent to {order.email}.')
 
@@ -118,7 +109,7 @@ def checkout_success(request, order_number):
 
     template = 'checkout/checkout_success.html'
     context = {
-        order: order,
+        'order': order,
     }
 
     return render(request, template, context)
